@@ -8,7 +8,7 @@
     android:id="@+id/rootLayout"
     tools:context=".MainActivity">
 
-<android.support.v7.widget.LinearLayoutCompat
+<androidx.appcompat.widget.LinearLayoutCompat
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:gravity="center_horizontal"
@@ -35,7 +35,7 @@
         android:textColor="@android:color/white"
 
         />
-    </android.support.v7.widget.LinearLayoutCompat>
+    </androidx.appcompat.widget.LinearLayoutCompat>
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -50,7 +50,7 @@
         android:textAlignment="center"
 
         />
-    <android.support.v7.widget.LinearLayoutCompat
+    <androidx.appcompat.widget.LinearLayoutCompat
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:weightSum="2"
@@ -82,7 +82,7 @@
             />
 
 
-    </android.support.v7.widget.LinearLayoutCompat>
+    </androidx.appcompat.widget.LinearLayoutCompat>
 
 
 </RelativeLayout>
