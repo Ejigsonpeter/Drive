@@ -123,7 +123,7 @@ RelativeLayout rootLayout;
                             @Override
                             public void onSuccess(AuthResult authResult) {
                                 waitingDialog.dismiss();
-                                startActivity(new Intent(MainActivity.this,Welcome.class));
+                                startActivity(new Intent(MainActivity.this,listOnline.class));
                                 finish();
 
 
