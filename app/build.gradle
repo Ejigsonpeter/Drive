@@ -6,6 +6,7 @@ android {
         applicationId "drive.ejigapeter.com.drive"
         minSdkVersion 19
         targetSdkVersion 26
+        multiDexEnabled true
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -49,7 +50,7 @@ dependencies {
     implementation 'com.google.android.gms:play-services-auth:17.0.0'
     implementation 'com.google.android.gms:play-services-plus:17.0.0'
     implementation 'com.google.android.gms:play-services-location:17.0.0'
-
+    implementation 'androidx.multidex:multidex:2.0.1'
 
     implementation 'com.firebase:geofire-android:2.1.2'
     implementation 'com.github.glomadrian:MaterialAnimatedSwitch:1.1@aar'

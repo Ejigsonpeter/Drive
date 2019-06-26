@@ -13,9 +13,7 @@ public class ListOnlineViewHolder extends RecyclerView.ViewHolder implements Vie
 
     }
 
-    public void setTxtEmail(TextView txtEmail) {
-        this.txtEmail = txtEmail;
-    }
+
 
     public void setItemClickListener(onItemClickListener itemClickListener) {
         this.itemClickListener = itemClickListener;
@@ -27,7 +25,7 @@ public class ListOnlineViewHolder extends RecyclerView.ViewHolder implements Vie
      * @param v The view that was clicked.
      */
     @Override
-    public void onClick(View v) {
-            itemClickListener.onClick(v,getAdapterPosition());
+    public void onClick(View view) {
+            itemClickListener.onClick(view,getAdapterPosition());
     }
 }
