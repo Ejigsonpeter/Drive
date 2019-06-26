@@ -12,6 +12,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 
 import android.os.Bundle;
+import android.text.TextUtils;
 
 import com.firebase.geofire.GeoFire;
 import com.github.glomadrian.materialanimatedswitch.MaterialAnimatedSwitch;
@@ -22,19 +23,30 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
 
-public class Welcome extends FragmentActivity implements OnMapReadyCallback,
-        GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener,
-        LocationListener
+import java.text.DecimalFormat;
+
+public class Welcome extends FragmentActivity implements OnMapReadyCallback
+
 {
 
     private GoogleMap mMap;
+    private  String email;
+    DatabaseReference Locations;
+    double lat,lng;
 
     //play service
 
@@ -68,32 +80,96 @@ public class Welcome extends FragmentActivity implements OnMapReadyCallback,
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
         //call vieew
-        location_switch = (MaterialAnimatedSwitch)findViewById(R.id.location_switch);
-        location_switch.setOnCheckedChangeListener(new MaterialAnimatedSwitch.OnCheckedChangeListener() {
+
+        //ref to firebase
+        Locations = FirebaseDatabase.getInstance().getReference("Locations");
+
+        if (getIntent() != null) {
+            email = getIntent().getStringExtra("email");
+            lat = getIntent().getDoubleExtra("lat",0);
+            lng = getIntent().getDoubleExtra("lng",0);
+
+
+        }
+
+        if(!TextUtils.isEmpty(email)){
+            loadLocationforthisuser(email);
+        }
+
+
+
+    }
+
+    private void loadLocationforthisuser(String email) {
+        Query user_location = Locations.orderByChild("email").equalTo(email);
+
+        user_location.addValueEventListener(new ValueEventListener() {
             @Override
-            public void onCheckedChanged(boolean isOnline) {
-                if (isOnline){
-                    startLocationUpdates();
-                    displayLocation  ();
-                    Snackbar.make(mapFragment.getView(),"You are online",Snackbar.LENGTH_SHORT)
-                            .show();
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                for (DataSnapshot postSnapshot: dataSnapshot.getChildren())  {
+                    Tracking tracking = postSnapshot.getValue(Tracking.class);
+//add marker
+                    LatLng elocations =new LatLng(Double.parseDouble(tracking.getLat()),Double.parseDouble(tracking.getLng()));
+
+                    //create cordinates for current user;
+                    Location currentUser = new Location("");
+                    currentUser.setLatitude(lat);
+                    currentUser.setLongitude(lng);
+                    //create cordinates for other users:
+                    Location others = new Location("");
+                    others.setLatitude(Double.parseDouble(tracking.getLat()));
+                    others.setLongitude(Double.parseDouble(tracking.getLng()));
+
+                    mMap.clear();
+                    //create function to calculate distance between two locations;
+                    distance(currentUser,others);
+                    //add other marker to the Map
+                    mMap.addMarker(new MarkerOptions()
+                                    .position(elocations)
+                                    .title(tracking.getEmail())
+                            .snippet("Distance "+new DecimalFormat("#.#").format((currentUser.distanceTo(others))/1000) + "km")
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
+                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat,lng),12.0f));
+
+
                 }
-                else{
-                    stopLocationUpdates();
-                    Snackbar.make(mapFragment.getView(),"You are offline",Snackbar.LENGTH_SHORT)
-                            .show();
-                }
+            //create marker for current User
+                LatLng current = new LatLng(lat,lng);
+                mMap.addMarker(new MarkerOptions().position(current).title(FirebaseAuth.getInstance().getCurrentUser().getEmail()));
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
 
             }
         });
+    }
+
+    private double distance(Location currentUser, Location others) {
+        double theta = currentUser.getLongitude() - others.getLongitude();
+        double dist = Math.sin(deg2rad(currentUser.getLatitude()))
+                * Math.sin(deg2rad(others.getLatitude()))
+                * Math.cos(deg2rad(currentUser.getLatitude()))
+                * Math.cos(deg2rad(others.getLatitude()))
+                * Math.cos(deg2rad(theta));
+
+        dist = Math.acos(dist);
+        dist = rad2deg(dist);
+        dist = dist * 60 * 1.1515;
+
+        return (dist);
 
     }
 
-    private void stopLocationUpdates() {
+    private double rad2deg(double rad) {
+        return (rad * 180.0 / Math.PI);
     }
 
-    private void displayLocation() {
+    private double deg2rad(double deg) {
+        return (deg * Math.PI / 180.0);
     }
+
 
     private void startLocationUpdates() {
         if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
@@ -107,44 +183,7 @@ public class Welcome extends FragmentActivity implements OnMapReadyCallback,
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
     }
 
-    @Override
-    public void onLocationChanged(Location location) {
 
-    }
-
-    @Override
-    public void onStatusChanged(String s, int i, Bundle bundle) {
-
-    }
-
-    @Override
-    public void onProviderEnabled(String s) {
-
-    }
-
-    @Override
-    public void onProviderDisabled(String s) {
-
-    }
-
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
-
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
-    }
 }
