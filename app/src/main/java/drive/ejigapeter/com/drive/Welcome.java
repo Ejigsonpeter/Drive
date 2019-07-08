@@ -13,6 +13,7 @@ import androidx.fragment.app.FragmentActivity;
 
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.widget.Toast;
 
 import com.firebase.geofire.GeoFire;
 import com.github.glomadrian.materialanimatedswitch.MaterialAnimatedSwitch;
@@ -84,6 +85,7 @@ public class Welcome extends FragmentActivity implements OnMapReadyCallback
         //ref to firebase
         Locations = FirebaseDatabase.getInstance().getReference("Locations");
 
+
         if (getIntent() != null) {
             email = getIntent().getStringExtra("email");
             lat = getIntent().getDoubleExtra("lat",0);
@@ -93,49 +95,38 @@ public class Welcome extends FragmentActivity implements OnMapReadyCallback
         }
 
         if(!TextUtils.isEmpty(email)){
-            loadLocationforthisuser(email);
+            loadusers(email);
         }
 
 
 
     }
 
-    private void loadLocationforthisuser(String email) {
+    private void loadusers(String email) {
+
         Query user_location = Locations.orderByChild("email").equalTo(email);
 
-        user_location.addValueEventListener(new ValueEventListener() {
+        user_location.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot postSnapshot: dataSnapshot.getChildren())  {
                     Tracking tracking = postSnapshot.getValue(Tracking.class);
-//add marker
+
                     LatLng elocations =new LatLng(Double.parseDouble(tracking.getLat()),Double.parseDouble(tracking.getLng()));
-
-                    //create cordinates for current user;
-                    Location currentUser = new Location("");
-                    currentUser.setLatitude(lat);
-                    currentUser.setLongitude(lng);
+                    Toast.makeText(getApplicationContext(), "success" , Toast.LENGTH_LONG).show();
                     //create cordinates for other users:
-                    Location others = new Location("");
-                    others.setLatitude(Double.parseDouble(tracking.getLat()));
-                    others.setLongitude(Double.parseDouble(tracking.getLng()));
 
-                    mMap.clear();
-                    //create function to calculate distance between two locations;
-                    distance(currentUser,others);
-                    //add other marker to the Map
+
+
                     mMap.addMarker(new MarkerOptions()
-                                    .position(elocations)
-                                    .title(tracking.getEmail())
-                            .snippet("Distance "+new DecimalFormat("#.#").format((currentUser.distanceTo(others))/1000) + "km")
+                            .position(elocations)
+                            .title(tracking.getEmail())
                             .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
                     mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat,lng),12.0f));
 
 
                 }
-            //create marker for current User
-                LatLng current = new LatLng(lat,lng);
-                mMap.addMarker(new MarkerOptions().position(current).title(FirebaseAuth.getInstance().getCurrentUser().getEmail()));
+
 
             }
 
@@ -144,36 +135,18 @@ public class Welcome extends FragmentActivity implements OnMapReadyCallback
 
             }
         });
-    }
 
-    private double distance(Location currentUser, Location others) {
-        double theta = currentUser.getLongitude() - others.getLongitude();
-        double dist = Math.sin(deg2rad(currentUser.getLatitude()))
-                * Math.sin(deg2rad(others.getLatitude()))
-                * Math.cos(deg2rad(currentUser.getLatitude()))
-                * Math.cos(deg2rad(others.getLatitude()))
-                * Math.cos(deg2rad(theta));
-
-        dist = Math.acos(dist);
-        dist = rad2deg(dist);
-        dist = dist * 60 * 1.1515;
-
-        return (dist);
 
     }
 
-    private double rad2deg(double rad) {
-        return (rad * 180.0 / Math.PI);
-    }
 
-    private double deg2rad(double deg) {
-        return (deg * Math.PI / 180.0);
-    }
+
+
 
 
     private void startLocationUpdates() {
         if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-        ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED  ){
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED  ){
             return;
         }
     }
@@ -182,6 +155,50 @@ public class Welcome extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        // Add a marker in Sydney and move the camera
+
+       LatLng user = new LatLng(lat, lng);
+        mMap.addMarker(new MarkerOptions().position(user).title(FirebaseAuth.getInstance().getCurrentUser().getEmail())
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
+
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat,lng),12.0f));
+        //loadusers(email);
+
+        Query user_location = Locations.orderByChild("email").equalTo(email);
+
+        user_location.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                for (DataSnapshot postSnapshot: dataSnapshot.getChildren())  {
+                    Tracking tracking = postSnapshot.getValue(Tracking.class);
+
+                    LatLng elocations =new LatLng(Double.parseDouble(tracking.getLat()),Double.parseDouble(tracking.getLng()));
+                    Toast.makeText(getApplicationContext(), "success" , Toast.LENGTH_LONG).show();
+                    //create cordinates for other users:
+
+
+
+                    mMap.addMarker(new MarkerOptions()
+                            .position(elocations)
+                            .title(tracking.getEmail())
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
+                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat,lng),12.0f));
+
+
+                }
+
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+
+
+
 
     }
 

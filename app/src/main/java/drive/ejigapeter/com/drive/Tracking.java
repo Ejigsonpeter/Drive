@@ -1,7 +1,7 @@
 package drive.ejigapeter.com.drive;
 
 public class Tracking {
-    private String email,uid,lng,lat;
+    public String email,uid,lng,lat,name;
 
     public  Tracking(){
 
@@ -11,6 +11,7 @@ public class Tracking {
         this.uid = uid;
         this.lat = lat;
         this.lng = lng;
+
 
     }
 
@@ -45,4 +46,6 @@ public class Tracking {
     public void setLat(String lat) {
         this.lat = lat;
     }
+
+
 }

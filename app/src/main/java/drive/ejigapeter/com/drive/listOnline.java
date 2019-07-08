@@ -15,15 +15,17 @@ import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-//import androidx.recyclerview.widget.RecyclerView.ViewHolder;
+import androidx.recyclerview.widget.RecyclerView.ViewHolder;
 
 import androidx.appcompat.widget.Toolbar;
 
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
@@ -42,6 +44,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
+import com.firebase.ui.database.*;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
@@ -59,6 +62,9 @@ GoogleApiClient.ConnectionCallbacks,GoogleApiClient.OnConnectionFailedListener, 
     RecyclerView listonline;
     RecyclerView.LayoutManager layoutManager;
 
+
+
+
     //locstion
     private static  final int MY_PERMISSION_REQUEST_CODE = 7171;
     private static  final int PLAY_SERVICES_RES_REQUEST = 7172;
@@ -68,6 +74,8 @@ GoogleApiClient.ConnectionCallbacks,GoogleApiClient.OnConnectionFailedListener, 
     private static int UPDATE_INTERVAL = 5000;
     private static int FASTEST_INTERVAL = 3000;
     private static int DISTANCE = 10;
+    onItemClickListener itemClickListener;
+
 
 
 
@@ -77,7 +85,7 @@ GoogleApiClient.ConnectionCallbacks,GoogleApiClient.OnConnectionFailedListener, 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list_online);
 //initialize the view
-        listonline = (RecyclerView)findViewById(R.id.listonline);
+        listonline = (RecyclerView)findViewById(R.id.ListOnline);
         listonline.setHasFixedSize(true);
 
 
@@ -134,7 +142,9 @@ else{
             .setValue(new Tracking(FirebaseAuth.getInstance().getCurrentUser().getEmail(),
                     FirebaseAuth.getInstance().getCurrentUser().getUid(),
                     String.valueOf(mLastLocation.getLatitude()),
-                    String.valueOf(mLastLocation.getLongitude())));
+                    String.valueOf(mLastLocation.getLongitude())
+
+                    ));
 
         }
         else{
@@ -182,36 +192,74 @@ else{
     }
 
     private void updateList() {
-        adapter = new FirebaseRecyclerAdapter<Users, ListOnlineViewHolder>(
-                Users.class,
-                R.layout.user_online,
-                ListOnlineViewHolder.class,
-                counterRef
-        ) {
-            @Override
-            protected void populateViewHolder(ListOnlineViewHolder viewHolder, final Users users, int i) {
-                    viewHolder.txtEmail.setText(users.getEmail());
+        FirebaseRecyclerOptions <Users> useroptions = new FirebaseRecyclerOptions.Builder<Users>()
+                .setQuery(counterRef,Users.class)
+                .build();
+              adapter =  new FirebaseRecyclerAdapter<Users, ListOnlineViewHolder>(useroptions) {
+                  @Override
+                  protected void onBindViewHolder(@NonNull ListOnlineViewHolder viewHolder, int position, @NonNull final Users users) {
+                      if (users.getEmail().equals(FirebaseAuth.getInstance().getCurrentUser().getEmail())){
+                          viewHolder.txtEmail.setText(users.getEmail() + "(me)" );
+                          //Toast.makeText(getApplicationContext(), "u didnt click" + users.getEmail() + mLastLocation.getLatitude() + mLastLocation.getLongitude() , Toast.LENGTH_LONG).show();
 
-                    viewHolder.itemClickListener = new onItemClickListener() {
-                        @Override
-                        public void onClick(View view, int position) {
+                          viewHolder.setItemClickListener(itemClickListener);
 
-                            if(!users.getEmail().equals(FirebaseAuth.getInstance().getCurrentUser().getEmail())){
-                                Intent intent = new Intent(listOnline.this,Welcome.class);
-                                intent.putExtra("Email",users.getEmail());
-                                intent.putExtra("lat",mLastLocation.getLatitude());
-                                intent.putExtra("lng",mLastLocation.getLongitude());
-                                startActivity(intent);
+                          viewHolder.txtEmail.setOnClickListener(new OnClickListener(){
 
-                            }
+                              @Override
+                              public void onClick(View v) {
+                                  //Toast.makeText(getApplicationContext(), "u did click" + users.getEmail(), Toast.LENGTH_LONG).show();
+                                  Intent intent = new Intent(v.getContext(),Welcome.class);
+                                  intent.putExtra("email",users.getEmail());
+                                  //Toast.makeText(getApplicationContext(), "u did click" + users.getEmail(), Toast.LENGTH_LONG).show();
+                                  intent.putExtra("lat",mLastLocation.getLatitude());
+                                  intent.putExtra("lng",mLastLocation.getLongitude());
+                                  v.getContext().startActivity(intent);
 
-                        }
-                    };
+                              }
+                          });
 
-            }
-        };
-        adapter.notifyDataSetChanged();
+
+                      }
+                      else
+                      {
+                          //viewHolder.txtEmail.setText(users.getEmail());
+                          viewHolder.txtEmail.setText(users.getEmail()  );
+                          viewHolder.setItemClickListener(itemClickListener);
+
+                          viewHolder.txtEmail.setOnClickListener(new OnClickListener(){
+
+                              @Override
+                              public void onClick(View v) {
+                                  //Toast.makeText(getApplicationContext(), "u did click" + users.getEmail(), Toast.LENGTH_LONG).show();
+                                  Intent intent = new Intent(v.getContext(),Welcome.class);
+                                  intent.putExtra("email",users.getEmail());
+                                  //Toast.makeText(getApplicationContext(), "u did click" + users.getEmail(), Toast.LENGTH_LONG).show();
+                                  intent.putExtra("lat",mLastLocation.getLatitude());
+                                  intent.putExtra("lng",mLastLocation.getLongitude());
+                                  v.getContext().startActivity(intent);
+
+                              }
+                          });
+
+
+                      }
+
+                  }
+
+                  @NonNull
+                  @Override
+                  public ListOnlineViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+                      View itemView = LayoutInflater.from(getBaseContext())
+                              .inflate(R.layout.user_layout,parent,false);
+
+                      return new ListOnlineViewHolder(itemView);
+                  }
+              };
+        adapter.startListening();
         listonline.setAdapter(adapter);
+        adapter.notifyDataSetChanged();
+
 
     }
 
@@ -219,7 +267,7 @@ else{
     private void setUpSystem() {
         onlineRef.addValueEventListener( new ValueEventListener() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+            public void onDataChange(DataSnapshot dataSnapshot) {
                 if(dataSnapshot.getValue(Boolean.class)){
                     currentUserRef.onDisconnect().removeValue();//remove old values
                     counterRef.child(FirebaseAuth.getInstance().getCurrentUser().getUid())
@@ -229,13 +277,13 @@ else{
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
+            public void onCancelled(DatabaseError databaseError) {
 
             }
         });
         counterRef.addValueEventListener(new ValueEventListener() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+            public void onDataChange(DataSnapshot dataSnapshot) {
                 for (DataSnapshot postSnapshot:dataSnapshot.getChildren()){
                     Users users = postSnapshot.getValue(Users.class);
                     Log.d("LOG", "" + users.getEmail() + " is " + users.getStatus());
@@ -243,7 +291,7 @@ else{
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
+            public void onCancelled(DatabaseError databaseError) {
 
             }
         });
@@ -298,12 +346,16 @@ else{
         {
             mGoogleApiclient.connect();
         }
+
     }
 
     @Override
     protected void onStop() {
         if (mGoogleApiclient != null){
             mGoogleApiclient.disconnect();
+        }
+        if (adapter != null ){
+            adapter.stopListening();
         }
         super.onStop();
     }
@@ -317,29 +369,14 @@ else{
 
 
     @Override
-    public void onConnected(@Nullable Bundle bundle) {
+    public void onConnected(Bundle bundle) {
        displayLocation();
        startLocationUpdates();
     }
 
-    /**
-     * Callback for the result from requesting permissions. This method
-     * is invoked for every call on {@link #requestPermissions(String[], int)}.
-     * <p>
-     * <strong>Note:</strong> It is possible that the permissions request interaction
-     * with the user is interrupted. In this case you will receive empty permissions
-     * and results arrays which should be treated as a cancellation.
-     * </p>
-     *
-     * @param requestCode  The request code passed in {@link #requestPermissions(String[], int)}.
-     * @param permissions  The requested permissions. Never null.
-     * @param grantResults The grant results for the corresponding permissions
-     *                     which is either {@link PackageManager#PERMISSION_GRANTED}
-     *                     or {@link PackageManager#PERMISSION_DENIED}. Never null.
-     * @see #requestPermissions(String[], int)
-     */
+
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         switch (requestCode){
             case MY_PERMISSION_REQUEST_CODE:
             {
@@ -375,7 +412,7 @@ else{
     }
 
     @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+    public void onConnectionFailed(ConnectionResult connectionResult) {
 
     }
 }
