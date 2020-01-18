@@ -9,16 +9,16 @@ The software is a an equipement tracking system. developed for android platform
 
 
 Splash  Screen
-![c](c1.JPG)
+![c](c1.png)
 
  login Screen
-![c1](c2.JPG)
+![c1](c2.png)
 
 Registration
-![c](c3.JPG)
+![c](c3.png)
 
 Dashboard
-![c](c4.JPG)
+![c](c4.png)
 
 
 
